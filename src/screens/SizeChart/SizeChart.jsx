@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { SafeAreaView, ScrollView, View, Text, Input, Divider, Card, Image, Logo } from '../../components'
-import { isNumber } from '../../helpers'
+import { isNumber, between, getNextItemValue } from '../../helpers'
 import { images } from '../../images'
 
 const DEFAULT_CALCULATED_SIZE = {}
@@ -14,23 +14,35 @@ const SizeChartScreen = ({ sizes, ranges }) => {
 	// Calculate size.
 	const [calculatesSize, setCalculatesSize] = useState(DEFAULT_CALCULATED_SIZE)
 	useEffect(() => {
-		const findedSizeItem = sizes.find(({ bust, waist, hips }) => (
-			Number(inputtedBust) <= bust &&
-			Number(inputtedWaist) <= waist &&
-			Number(inputtedHips) <= hips
-		)) || DEFAULT_CALCULATED_SIZE
-		setCalculatesSize(findedSizeItem)
+		const maxBust = sizes.findIndex(({ bust }, index, sizes) =>
+			between(Number(inputtedBust), bust, getNextItemValue(sizes, index, 'bust')),
+		)
+		const maxWaist = sizes.findIndex(({ waist }, index, sizes) =>
+			between(Number(inputtedWaist), waist, getNextItemValue(sizes, index, 'waist')),
+		)
+		const maxHips = sizes.findIndex(({ hips }, index, sizes) =>
+			between(Number(inputtedHips), hips, getNextItemValue(sizes, index, 'hips')),
+		)
+		const findedSizeIndex = Math.max(maxBust, maxWaist, maxHips)
+		const findedSize = sizes[findedSizeIndex] || {}
+		setCalculatesSize(findedSize)
 	}, [sizes, inputtedBust, inputtedWaist, inputtedHips])
 
 	// Validate form.
 	const { errors, validated } = useMemo(() => {
 		const errors = {}
-		if (inputtedBust < ranges.MIN_BUST) errors.bust = `Please enter a value greater than or equal to ${ranges.MIN_BUST}.`
-		if (inputtedBust > ranges.MAX_BUST) errors.bust = `Please enter a value less than or equal to ${ranges.MAX_BUST}.`
-		if (inputtedWaist < ranges.MIN_WAIST) errors.waist = `Please enter a value greater than or equal to ${ranges.MIN_WAIST}.`
-		if (inputtedWaist > ranges.MAX_WAIST) errors.waist = `Please enter a value less than or equal to ${ranges.MAX_WAIST}.`
-		if (inputtedHips < ranges.MIN_HIPS) errors.hips = `Please enter a value greater than or equal to ${ranges.MIN_HIPS}.`
-		if (inputtedHips > ranges.MAX_HIPS) errors.hips = `Please enter a value less than or equal to ${ranges.MAX_HIPS}.`
+		if (inputtedBust < ranges.MIN_BUST)
+			errors.bust = `Please enter a value greater than or equal to ${ranges.MIN_BUST}.`
+		if (inputtedBust > ranges.MAX_BUST)
+			errors.bust = `Please enter a value less than or equal to ${ranges.MAX_BUST}.`
+		if (inputtedWaist < ranges.MIN_WAIST)
+			errors.waist = `Please enter a value greater than or equal to ${ranges.MIN_WAIST}.`
+		if (inputtedWaist > ranges.MAX_WAIST)
+			errors.waist = `Please enter a value less than or equal to ${ranges.MAX_WAIST}.`
+		if (inputtedHips < ranges.MIN_HIPS)
+			errors.hips = `Please enter a value greater than or equal to ${ranges.MIN_HIPS}.`
+		if (inputtedHips > ranges.MAX_HIPS)
+			errors.hips = `Please enter a value less than or equal to ${ranges.MAX_HIPS}.`
 		const validated = !Object.keys(errors).length
 		return { errors, validated }
 	}, [inputtedBust, inputtedWaist, inputtedHips])
@@ -44,29 +56,29 @@ const SizeChartScreen = ({ sizes, ranges }) => {
 		<SafeAreaView>
 			<ScrollView>
 				<Logo />
-				<Card 
+				<Card
 					title="Size calculator"
 					featuredTitle="Using size chart: Bridesmaids, Evening Wear, Prom Dresses,Lenovia Bridal ,LENOVIA VIP"
 				>
-					<Input 
-						placeholder='Input bust...'
-						label='Bust'
+					<Input
+						placeholder="Input bust..."
+						label="Bust"
 						value={inputtedBust}
 						onChangeText={setInputtedBust}
 						keyboardType="number-pad"
 						errorMessage={errors.bust}
 					/>
-					<Input 
-						placeholder='Input waist...'
-						label='Waist'
+					<Input
+						placeholder="Input waist..."
+						label="Waist"
 						value={inputtedWaist}
 						onChangeText={setInputtedWaist}
 						keyboardType="number-pad"
 						errorMessage={errors.waist}
 					/>
-					<Input 
-						placeholder='Input hips...'
-						label='Hips'
+					<Input
+						placeholder="Input hips..."
+						label="Hips"
 						value={inputtedHips}
 						onChangeText={setInputtedHips}
 						keyboardType="number-pad"
@@ -79,7 +91,9 @@ const SizeChartScreen = ({ sizes, ranges }) => {
 							<Text h4>{`Your UK Size is: ${calculatesSize.UK}`}</Text>
 							<Text h4>{`Your EU Size is: ${calculatesSize.Germany}`}</Text>
 						</View>
-					) : <Text>Wait for input parameters...</Text>}
+					) : (
+						<Text>Wait for input parameters...</Text>
+					)}
 				</Card>
 			</ScrollView>
 		</SafeAreaView>
